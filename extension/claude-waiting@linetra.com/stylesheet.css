@@ -1,0 +1,10 @@
+/* Highlight the panel icon when at least one Claude session is waiting. */
+.claude-waiting-icon.claude-waiting-active {
+    color: #f5a623;
+}
+
+.claude-waiting-count {
+    color: #f5a623;
+    font-weight: bold;
+    margin-left: 3px;
+}
