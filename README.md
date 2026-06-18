@@ -174,3 +174,7 @@ You don't have to let the installer edit `~/.claude/settings.json`. Run with
 append it as the 2nd argument to each command, e.g.
 `… claude-waiting-signal.sh wait /home/CLAUDE_USER/.local/share/claude-waiting`.
 Run `jq . ~/.claude/settings.json` afterward to confirm it's still valid JSON.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
