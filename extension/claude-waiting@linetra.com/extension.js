@@ -14,10 +14,6 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 // Directory both halves agree on: hooks write here, the extension watches here.
 const STATE_SUBDIR = ['.local', 'share', 'claude-waiting'];
 
-// Periodic re-scan interval (only runs while >=1 marker exists). Refreshes the
-// "Nm ago" ages in the menu and prunes markers whose Claude pid has died.
-const TIMER_SECONDS = 15;
-
 // Debounce window for bursts of FileMonitor events.
 const DEBOUNCE_MS = 200;
 
@@ -34,7 +30,6 @@ class ClaudeIndicator extends PanelMenu.Button {
         this._waiting = new Map();   // sessionId -> {cwd, message, ts, pid, _path}
         this._acked = new Set();     // sessionIds whose red alert you dismissed by clicking
         this._monitor = null;
-        this._timerId = 0;
         this._debounceId = 0;
 
         // --- panel button: icon + count badge ---
@@ -69,9 +64,13 @@ class ClaudeIndicator extends PanelMenu.Button {
 
         // Clicking the indicator (opening the menu) acknowledges the alert:
         // the red bar resets, but the count/markers stay until you respond.
+        // Opening is also our cue to re-scan (refresh ages, prune dead markers),
+        // since there is no periodic timer.
         this.menu.connect('open-state-changed', (_menu, isOpen) => {
-            if (isOpen)
+            if (isOpen) {
+                this._refresh();
                 this._acknowledge();
+            }
         });
     }
 
@@ -165,22 +164,6 @@ class ClaudeIndicator extends PanelMenu.Button {
 
         this._waiting = found;
         this._updateUI();
-        this._updateTimer();
-    }
-
-    // The 15s timer only lives while there is something to age/prune.
-    _updateTimer() {
-        const want = this._waiting.size > 0;
-        if (want && !this._timerId) {
-            this._timerId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT,
-                TIMER_SECONDS, () => {
-                    this._refresh();
-                    return GLib.SOURCE_CONTINUE;
-                });
-        } else if (!want && this._timerId) {
-            GLib.source_remove(this._timerId);
-            this._timerId = 0;
-        }
     }
 
     _projectName(d) {
@@ -265,10 +248,6 @@ class ClaudeIndicator extends PanelMenu.Button {
         if (this._debounceId) {
             GLib.source_remove(this._debounceId);
             this._debounceId = 0;
-        }
-        if (this._timerId) {
-            GLib.source_remove(this._timerId);
-            this._timerId = 0;
         }
         if (this._monitor) {
             this._monitor.cancel();

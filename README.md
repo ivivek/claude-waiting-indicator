@@ -43,9 +43,10 @@ approved tool runs, so the icon doesn't linger while Claude keeps working.
 ### Widget side — the GNOME Shell extension
 
 - Watches the marker directory with a **`Gio.FileMonitor`** (kernel inotify):
-  reacts instantly, costs nothing while idle — it is **not** polling.
-- A 15-second timer (for refreshing ages and pruning) **only runs while at
-  least one marker exists**; with nothing waiting, no timer runs at all.
+  reacts instantly, costs nothing while idle — **purely event-driven, no
+  polling and no timers**. It updates only when a hook writes/removes a marker.
+- Relative ages in the menu and dead-marker pruning are refreshed **when you
+  open the menu** (and on every file event), so nothing runs in the background.
 - When ≥1 session is waiting, the **whole top bar turns dark red** (`#c01c28`)
   and our icon shows a white **count badge**; both revert when nothing's waiting.
 - Dropdown lists each waiting session (project folder + age); click to dismiss,
