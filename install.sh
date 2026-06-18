@@ -140,7 +140,7 @@ if [ "$do_hooks" = 1 ]; then
                 .hooks = (.hooks // {})
                 # wait: Claude finished its turn, OR it is asking permission
                 | .hooks.Stop             = add_hook(.hooks.Stop;             null;                $wait)
-                | .hooks.Notification     = add_hook(.hooks.Notification;     "permission_prompt"; $wait)
+                | .hooks.Notification     = add_hook(.hooks.Notification;     "permission_prompt|elicitation_dialog"; $wait)
                 # clear: user replied, a tool ran (post-approval), or session ended
                 | .hooks.UserPromptSubmit = add_hook(.hooks.UserPromptSubmit; null;                $clear)
                 | .hooks.PostToolUse      = add_hook(.hooks.PostToolUse;      null;                $clear)

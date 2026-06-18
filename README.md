@@ -26,7 +26,7 @@ small files on disk.
 | Hook                              | Fires when…                                       | Action  |
 | --------------------------------- | ------------------------------------------------- | ------- |
 | `Stop`                            | Claude finished its turn → it's your turn         | `wait`  |
-| `Notification` (`permission_prompt`) | Claude is asking permission to run something   | `wait`  |
+| `Notification` (`permission_prompt`/`elicitation_dialog`) | Claude is asking permission, or an MCP server is asking for input | `wait`  |
 | `UserPromptSubmit`                | You submitted a reply                             | `clear` |
 | `PostToolUse`                     | A tool ran (e.g. right after you approve)         | `clear` |
 | `SessionEnd`                      | That Claude instance exited                       | `clear` |
