@@ -21,17 +21,23 @@ small files on disk.
 
 ## How it works
 
-### Claude side — three hooks calling one script
+### Claude side — five hooks calling one script
 
-| Hook               | Fires when…                                   | Action  |
-| ------------------ | --------------------------------------------- | ------- |
-| `Stop`             | Claude finished its turn → it's your turn     | `wait`  |
-| `UserPromptSubmit` | You submitted a reply                         | `clear` |
-| `SessionEnd`       | That Claude instance exited                   | `clear` |
+| Hook                              | Fires when…                                       | Action  |
+| --------------------------------- | ------------------------------------------------- | ------- |
+| `Stop`                            | Claude finished its turn → it's your turn         | `wait`  |
+| `Notification` (`permission_prompt`) | Claude is asking permission to run something   | `wait`  |
+| `UserPromptSubmit`                | You submitted a reply                             | `clear` |
+| `PostToolUse`                     | A tool ran (e.g. right after you approve)         | `clear` |
+| `SessionEnd`                      | That Claude instance exited                       | `clear` |
 
 `claude-waiting-signal.sh` reads the hook JSON from stdin, pulls `session_id`
 and `cwd`, and writes/removes `~/.local/share/claude-waiting/<session_id>.json`
 containing `{session, cwd, message, ts, pid}`. It never fails the hook.
+
+So you're alerted both when Claude **finishes a turn** and when it **asks
+permission** mid-turn. `PostToolUse` clears the permission alert as soon as the
+approved tool runs, so the icon doesn't linger while Claude keeps working.
 
 ### Widget side — the GNOME Shell extension
 
@@ -151,9 +157,9 @@ rm -rf ~/.local/share/claude-waiting
 
 ## Tuning
 
-- **Also alert on permission prompts** (not just turn-end): add a `Notification`
-  hook with matcher `permission_prompt` calling the script with `wait`. The
-  script already handles it.
+- **Turn-end only** (no permission alerts): drop the `Notification` and
+  `PostToolUse` blocks from `settings.json` — the widget then lights up only
+  when Claude finishes a turn.
 - Change the marker directory in three equivalent ways for the hook: pass it as
   the 2nd argument (`… wait /path`), set `CLAUDE_WAITING_DIR`, or rely on the
   default `~/.local/share/claude-waiting`. For the extension, set it via

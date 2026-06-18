@@ -127,15 +127,24 @@ if [ "$do_hooks" = 1 ]; then
 
             tmp="$(mktemp)"
             if jq --arg wait "$wait_cmd" --arg clear "$clear_cmd" '
-                def add_hook(arr; cmd):
+                # add a hook group (optionally with a matcher) unless its
+                # command already exists -> idempotent re-runs
+                def add_hook(arr; matcher; cmd):
                     ((arr // []) | map(.hooks[]?.command)) as $cmds
                     | if ($cmds | index(cmd)) then (arr // [])
-                      else ((arr // []) + [{hooks: [{type: "command", command: cmd}]}])
+                      else ((arr // []) + [ (if matcher == null
+                              then {hooks: [{type: "command", command: cmd}]}
+                              else {matcher: matcher, hooks: [{type: "command", command: cmd}]}
+                              end) ])
                       end;
                 .hooks = (.hooks // {})
-                | .hooks.Stop             = add_hook(.hooks.Stop;             $wait)
-                | .hooks.UserPromptSubmit = add_hook(.hooks.UserPromptSubmit; $clear)
-                | .hooks.SessionEnd       = add_hook(.hooks.SessionEnd;       $clear)
+                # wait: Claude finished its turn, OR it is asking permission
+                | .hooks.Stop             = add_hook(.hooks.Stop;             null;                $wait)
+                | .hooks.Notification     = add_hook(.hooks.Notification;     "permission_prompt"; $wait)
+                # clear: user replied, a tool ran (post-approval), or session ended
+                | .hooks.UserPromptSubmit = add_hook(.hooks.UserPromptSubmit; null;                $clear)
+                | .hooks.PostToolUse      = add_hook(.hooks.PostToolUse;      null;                $clear)
+                | .hooks.SessionEnd       = add_hook(.hooks.SessionEnd;       null;                $clear)
             ' "$SETTINGS" > "$tmp" 2>/dev/null && [ -s "$tmp" ]; then
                 mv "$tmp" "$SETTINGS"
                 echo "    hooks merged"
@@ -147,9 +156,11 @@ if [ "$do_hooks" = 1 ]; then
     else
         echo "==> Skipping settings.json (--no-settings)."
         echo "    Add these hook commands to ~/.claude/settings.json by hand:"
-        echo "      Stop             -> $wait_cmd"
-        echo "      UserPromptSubmit -> $clear_cmd"
-        echo "      SessionEnd       -> $clear_cmd"
+        echo "      Stop                              -> $wait_cmd"
+        echo "      Notification (permission_prompt)  -> $wait_cmd"
+        echo "      UserPromptSubmit                  -> $clear_cmd"
+        echo "      PostToolUse                       -> $clear_cmd"
+        echo "      SessionEnd                        -> $clear_cmd"
     fi
 
     if [ "$open_perms" = 1 ]; then
