@@ -189,13 +189,15 @@ class ClaudeIndicator extends PanelMenu.Button {
     _updateUI() {
         const n = this._waiting.size;
 
-        // Panel icon + badge.
+        // Panel icon + badge, and turn the whole top bar red while waiting.
         if (n > 0) {
             this._icon.add_style_class_name('claude-waiting-active');
+            Main.panel.add_style_class_name('claude-panel-alert');
             this._countLabel.text = String(n);
             this._countLabel.visible = true;
         } else {
             this._icon.remove_style_class_name('claude-waiting-active');
+            Main.panel.remove_style_class_name('claude-panel-alert');
             this._countLabel.visible = false;
         }
 
@@ -257,6 +259,8 @@ class ClaudeIndicator extends PanelMenu.Button {
             this._monitor.cancel();
             this._monitor = null;
         }
+        // Never leave the bar red if we're being disabled/removed.
+        Main.panel.remove_style_class_name('claude-panel-alert');
         super.destroy();
     }
 });

@@ -1,10 +1,16 @@
-/* Highlight the panel icon when at least one Claude session is waiting. */
+/* Turn the whole top bar dark red while at least one Claude session is
+   waiting. The extension adds/removes the .claude-panel-alert class on #panel. */
+#panel.claude-panel-alert {
+    background-color: #c01c28;
+}
+
+/* On the red bar, keep our icon + count badge white so they stay legible. */
 .claude-waiting-icon.claude-waiting-active {
-    color: #f5a623;
+    color: #ffffff;
 }
 
 .claude-waiting-count {
-    color: #f5a623;
+    color: #ffffff;
     font-weight: bold;
     margin-left: 3px;
 }
