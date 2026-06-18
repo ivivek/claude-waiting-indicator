@@ -47,6 +47,26 @@ field() {
   fi
 }
 
+# Find the long-lived Claude process by walking up the parent chain, so the
+# marker's liveness pid survives the hook run. $PPID is only the throwaway shell
+# Claude spawns to run the hook -- it exits immediately, which would make the
+# panel extension prune the marker a few seconds later. We instead store the pid
+# of the ancestor whose comm is "claude" (or "node" for node-based installs).
+# Returns 0 if not found, which the extension treats as "unknown -> never prune".
+find_claude_pid() {
+  local pid="$PPID" guard=0 comm
+  while [ -n "$pid" ] && [ "$pid" -gt 1 ] && [ "$guard" -lt 30 ]; do
+    comm="$(cat "/proc/$pid/comm" 2>/dev/null)"
+    if [ "$comm" = "claude" ] || [ "$comm" = "node" ]; then
+      printf '%s' "$pid"
+      return 0
+    fi
+    pid="$(awk '{print $4}' "/proc/$pid/stat" 2>/dev/null)"
+    guard=$((guard + 1))
+  done
+  printf '0'
+}
+
 session_id="$(field session_id)"
 [ -n "$session_id" ] || session_id="unknown-$$"
 
@@ -68,10 +88,10 @@ case "$action" in
 
     ts="$(date +%s 2>/dev/null || echo 0)"
 
-    # $PPID is the parent of this hook process, which is the long-lived Claude
-    # process at the moment the hook runs. The extension prunes the marker if
-    # this pid later disappears (covers a Claude killed without SessionEnd).
-    owner_pid="$PPID"
+    # Liveness pid = the long-lived Claude process (see find_claude_pid). The
+    # extension prunes the marker only if this pid later disappears (covers a
+    # Claude killed without SessionEnd).
+    owner_pid="$(find_claude_pid)"
 
     if command -v jq >/dev/null 2>&1; then
       jq -n \
