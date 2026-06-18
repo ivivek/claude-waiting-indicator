@@ -1,16 +1,23 @@
-/* Turn the whole top bar dark red while at least one Claude session is
-   waiting. The extension adds/removes the .claude-panel-alert class on #panel. */
+/* Turn the whole top bar dark red while an unacknowledged Claude session is
+   waiting. The extension adds/removes .claude-panel-alert on #panel. */
 #panel.claude-panel-alert {
     background-color: #c01c28;
 }
 
-/* On the red bar, keep our icon + count badge white so they stay legible. */
+/* Icon + count badge: red on the normal bar (e.g. after you click to
+   acknowledge, the bar resets but the badge stays)... */
 .claude-waiting-icon.claude-waiting-active {
-    color: #ffffff;
+    color: #c01c28;
 }
 
 .claude-waiting-count {
-    color: #ffffff;
+    color: #c01c28;
     font-weight: bold;
     margin-left: 3px;
+}
+
+/* ...and white while the bar itself is red, so they stay legible on it. */
+#panel.claude-panel-alert .claude-waiting-icon.claude-waiting-active,
+#panel.claude-panel-alert .claude-waiting-count {
+    color: #ffffff;
 }

@@ -32,6 +32,7 @@ class ClaudeIndicator extends PanelMenu.Button {
 
         this._stateDir = stateDir;
         this._waiting = new Map();   // sessionId -> {cwd, message, ts, pid, _path}
+        this._acked = new Set();     // sessionIds whose red alert you dismissed by clicking
         this._monitor = null;
         this._timerId = 0;
         this._debounceId = 0;
@@ -65,6 +66,21 @@ class ClaudeIndicator extends PanelMenu.Button {
         this._dismissAllItem = new PopupMenu.PopupMenuItem('Dismiss all');
         this._dismissAllItem.connect('activate', () => this._dismissAll());
         this.menu.addMenuItem(this._dismissAllItem);
+
+        // Clicking the indicator (opening the menu) acknowledges the alert:
+        // the red bar resets, but the count/markers stay until you respond.
+        this.menu.connect('open-state-changed', (_menu, isOpen) => {
+            if (isOpen)
+                this._acknowledge();
+        });
+    }
+
+    // Mark every currently-waiting session as acknowledged, then drop the red
+    // bar. A *new* waiting session (not yet acknowledged) re-triggers the red.
+    _acknowledge() {
+        for (const sid of this._waiting.keys())
+            this._acked.add(sid);
+        this._updateUI();
     }
 
     start() {
@@ -188,17 +204,31 @@ class ClaudeIndicator extends PanelMenu.Button {
     _updateUI() {
         const n = this._waiting.size;
 
-        // Panel icon + badge, and turn the whole top bar red while waiting.
+        // Forget acknowledgements for sessions that are no longer waiting, so if
+        // the same session waits again later it re-triggers the red bar.
+        for (const sid of [...this._acked]) {
+            if (!this._waiting.has(sid))
+                this._acked.delete(sid);
+        }
+        // Red only while there's a waiting session you haven't acknowledged.
+        let unacked = false;
+        for (const sid of this._waiting.keys()) {
+            if (!this._acked.has(sid)) { unacked = true; break; }
+        }
+
+        // Icon + count badge track the total count; the red bar tracks unacked.
         if (n > 0) {
             this._icon.add_style_class_name('claude-waiting-active');
-            Main.panel.add_style_class_name('claude-panel-alert');
             this._countLabel.text = String(n);
             this._countLabel.visible = true;
         } else {
             this._icon.remove_style_class_name('claude-waiting-active');
-            Main.panel.remove_style_class_name('claude-panel-alert');
             this._countLabel.visible = false;
         }
+        if (unacked)
+            Main.panel.add_style_class_name('claude-panel-alert');
+        else
+            Main.panel.remove_style_class_name('claude-panel-alert');
 
         // Header.
         this._headerItem.label.text = n > 0
