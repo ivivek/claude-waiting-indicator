@@ -32,7 +32,6 @@ class ClaudeIndicator extends PanelMenu.Button {
 
         this._stateDir = stateDir;
         this._waiting = new Map();   // sessionId -> {cwd, message, ts, pid, _path}
-        this._known = new Set();     // sessionIds already notified (to fire once)
         this._monitor = null;
         this._timerId = 0;
         this._debounceId = 0;
@@ -217,20 +216,6 @@ class ClaudeIndicator extends PanelMenu.Button {
         const hasItems = n > 0;
         this._dismissAllSep.visible = hasItems;
         this._dismissAllItem.visible = hasItems;
-
-        // Fire a desktop notification once per newly-waiting session.
-        for (const [sid, d] of this._waiting) {
-            if (!this._known.has(sid)) {
-                this._known.add(sid);
-                Main.notify('Claude Code is waiting',
-                    `${this._projectName(d)}: ${d.message || 'waiting for your input'}`);
-            }
-        }
-        // Forget sessions that are no longer waiting, so they re-notify later.
-        for (const sid of [...this._known]) {
-            if (!this._waiting.has(sid))
-                this._known.delete(sid);
-        }
     }
 
     _dismiss(sid) {

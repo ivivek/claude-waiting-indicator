@@ -1,7 +1,8 @@
 # Claude Code Waiting — Ubuntu panel widget
 
-A GNOME Shell top-bar indicator (plus a desktop notification) that lights up
-whenever **any running Claude Code instance is waiting for your input**.
+A GNOME Shell widget that turns the whole top bar red (plus a count-badge
+indicator) whenever **any running Claude Code instance is waiting for your
+input**.
 
 It works for any number of concurrent Claude sessions, including ones running
 in bare terminals / over SSH, because the two halves communicate only through
@@ -10,8 +11,8 @@ small files on disk.
 ```
 ┌─ Claude Code session(s) ───┐  writes  ┌─ GNOME session (your desktop) ─┐
 │  hooks in settings.json    │ ───────► │  GNOME Shell extension          │
-│  → claude-waiting-signal.sh│  marker  │  • top-bar icon + count badge   │
-│  writes/removes one marker │  files   │  • desktop notification         │
+│  → claude-waiting-signal.sh│  marker  │  • whole top bar turns red      │
+│  writes/removes one marker │  files   │  • icon + count badge           │
 │  file per session_id       │ ◄─────── │  • dropdown of waiting sessions │
 └────────────────────────────┘  reads   └─────────────────────────────────┘
         ~/.local/share/claude-waiting/<session_id>.json
@@ -45,11 +46,10 @@ approved tool runs, so the icon doesn't linger while Claude keeps working.
   reacts instantly, costs nothing while idle — it is **not** polling.
 - A 15-second timer (for refreshing ages and pruning) **only runs while at
   least one marker exists**; with nothing waiting, no timer runs at all.
-- Panel icon is dim when empty, **highlighted + count badge** when ≥1 waiting.
+- When ≥1 session is waiting, the **whole top bar turns dark red** (`#c01c28`)
+  and our icon shows a white **count badge**; both revert when nothing's waiting.
 - Dropdown lists each waiting session (project folder + age); click to dismiss,
   or "Dismiss all".
-- Fires a desktop notification once per newly-waiting session, via GNOME's own
-  message tray (so it always reaches the on-screen session).
 
 ### Self-healing
 

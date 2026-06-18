@@ -1,7 +1,7 @@
 {
   "uuid": "claude-waiting@linetra.com",
   "name": "Claude Code Waiting",
-  "description": "Shows a top-bar indicator and a desktop notification whenever any running Claude Code instance is waiting for your input. Watches ~/.local/share/claude-waiting for per-session marker files written by Claude Code hooks.",
+  "description": "Turns the top bar red and shows an indicator whenever any running Claude Code instance is waiting for your input. Watches ~/.local/share/claude-waiting for per-session marker files written by Claude Code hooks.",
   "shell-version": ["45", "46", "47", "48"],
   "version": 1,
   "url": "https://github.com/"
